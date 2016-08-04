@@ -14,6 +14,13 @@ app.use(session({
   saveUninitialized: false
 }));
 
+// make session available across application e.g. our templates
+app.use(function(req, res, next) {
+  // now currentUser will be avalable
+  res.locals.currentUser = req.session.userId;
+  next();
+});
+
 // connect to mongodb
 mongoose.connect("mongodb://localhost/bookworm", function(err) {
 	if (err) {
