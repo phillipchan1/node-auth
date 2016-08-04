@@ -3,23 +3,7 @@ var bodyParser = require('body-parser');
 var app = express();
 var mongoose = require('mongoose');
 var session = require('express-session');
-
-// use sessions for tracking logins
-app.use(session({
-  // secret to attach to each cookie
-  secret: 'treehouse loves you',
-  //
-  resave: true,
-  // forces uninitialized session to be saved in the session store
-  saveUninitialized: false
-}));
-
-// make session available across application e.g. our templates
-app.use(function(req, res, next) {
-  // now currentUser will be avalable
-  res.locals.currentUser = req.session.userId;
-  next();
-});
+var MongoStore = require('connect-mongo')(session);
 
 // connect to mongodb
 mongoose.connect("mongodb://localhost/bookworm", function(err) {
@@ -30,6 +14,30 @@ mongoose.connect("mongodb://localhost/bookworm", function(err) {
 	}
 });
 var db = mongoose.connection;
+
+// use sessions for tracking logins
+app.use(session({
+  // secret to attach to each cookie
+  secret: 'treehouse loves you',
+
+  resave: true,
+
+  // forces uninitialized session to be saved in the session store
+  saveUninitialized: false,
+
+  // save the session in a mongoDB vs app server ram
+  store: new MongoStore({
+    mongooseConnection: db
+  })
+}));
+
+// make session available across application e.g. our templates
+app.use(function(req, res, next) {
+  // now currentUser will be avalable
+  res.locals.currentUser = req.session.userId;
+  next();
+});
+
 
 // mongo error
 db.on('error', console.error.bind(console, 'connection failed'));
